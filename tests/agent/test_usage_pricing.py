@@ -123,3 +123,28 @@ def test_custom_endpoint_models_api_pricing_is_supported(monkeypatch):
 
     assert float(entry.input_cost_per_million) == 0.5
     assert float(entry.output_cost_per_million) == 2.0
+
+
+def test_anthropic_alias_pricing_entries_match_official_rates():
+    opus = get_pricing_entry(
+        "claude-opus-4-6",
+        provider="anthropic",
+        base_url="https://api.anthropic.com/v1",
+    )
+    sonnet = get_pricing_entry(
+        "claude-sonnet-4-6",
+        provider="anthropic",
+        base_url="https://api.anthropic.com/v1",
+    )
+    haiku = get_pricing_entry(
+        "claude-haiku-4-5-20251001",
+        provider="anthropic",
+        base_url="https://api.anthropic.com/v1",
+    )
+
+    assert float(opus.input_cost_per_million) == 15.0
+    assert float(opus.output_cost_per_million) == 75.0
+    assert float(sonnet.input_cost_per_million) == 3.0
+    assert float(sonnet.output_cost_per_million) == 15.0
+    assert float(haiku.input_cost_per_million) == 0.8
+    assert float(haiku.output_cost_per_million) == 4.0
