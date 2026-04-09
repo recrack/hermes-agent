@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 from utils import is_truthy_value
 
 _COMPLEX_KEYWORDS = {
+    # English
     "debug",
     "debugging",
     "implement",
@@ -43,6 +44,26 @@ _COMPLEX_KEYWORDS = {
     "cron",
     "docker",
     "kubernetes",
+    # Korean
+    "진행",
+    "분석",
+    "구현",
+    "디버그",
+    "수정",
+    "작성",
+    "테스트",
+    "리뷰",
+    "최적화",
+    "설계",
+    "리팩토링",
+    "조사",
+    "비교",
+    "벤치마크",
+    "문제",
+    "에러",
+    "도구",
+    "계획",
+    "패치",
 }
 
 _URL_RE = re.compile(r"https?://|www\.", re.IGNORECASE)

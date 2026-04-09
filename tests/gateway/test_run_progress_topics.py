@@ -5,6 +5,7 @@ import sys
 import time
 import types
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -123,7 +124,7 @@ async def test_run_agent_progress_stays_in_originating_topic(monkeypatch, tmp_pa
     runner = _make_runner(adapter)
     gateway_run = importlib.import_module("gateway.run")
     monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
-    monkeypatch.setattr(gateway_run, "_resolve_runtime_agent_kwargs", lambda: {"api_key": "fake"})
+    monkeypatch.setattr(gateway_run, "_resolve_runtime_agent_kwargs", lambda: {"api_key": "***"})
     source = SessionSource(
         platform=Platform.TELEGRAM,
         chat_id="-1001",
@@ -144,13 +145,90 @@ async def test_run_agent_progress_stays_in_originating_topic(monkeypatch, tmp_pa
     assert adapter.sent == [
         {
             "chat_id": "-1001",
-            "content": '💻 terminal: "pwd"',
+            "content": '⚙️ terminal: "pwd"',
             "reply_to": None,
             "metadata": {"thread_id": "17585"},
         }
     ]
     assert adapter.edits
     assert all(call["metadata"] == {"thread_id": "17585"} for call in adapter.typing)
+
+
+@pytest.mark.asyncio
+async def test_run_agent_prepends_message_count_when_enabled(monkeypatch, tmp_path):
+    monkeypatch.setenv("HERMES_TOOL_PROGRESS_MODE", "all")
+
+    fake_dotenv = types.ModuleType("dotenv")
+    fake_dotenv.load_dotenv = lambda *args, **kwargs: None
+    monkeypatch.setitem(sys.modules, "dotenv", fake_dotenv)
+
+    fake_run_agent = types.ModuleType("run_agent")
+    fake_run_agent.AIAgent = FakeAgent
+    monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+
+    adapter = ProgressCaptureAdapter()
+    runner = _make_runner(adapter)
+    runner.config = types.SimpleNamespace()
+    runner._show_message_count = True
+    runner._show_reasoning = False
+    runner._should_send_voice_reply = lambda *args, **kwargs: False
+    runner._deliver_media_from_response = AsyncMock()
+
+    gateway_run = importlib.import_module("gateway.run")
+    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_resolve_gateway_model", lambda: "gpt-5.4")
+    monkeypatch.setattr(gateway_run, "build_session_context", lambda *args, **kwargs: object())
+    monkeypatch.setattr(gateway_run, "build_session_context_prompt", lambda *args, **kwargs: "")
+
+    session_store = types.SimpleNamespace()
+    session_store.config = types.SimpleNamespace(get_reset_policy=lambda **kwargs: types.SimpleNamespace(notify=False))
+    session_store.get_or_create_session = lambda source: types.SimpleNamespace(
+        session_key="agent:main:telegram:group:-1001:17585",
+        session_id="sess-1",
+        created_at=1,
+        updated_at=1,
+        was_auto_reset=False,
+        auto_reset_reason=None,
+        reset_had_activity=False,
+    )
+    session_store.load_transcript = lambda *args, **kwargs: []
+    session_store.has_any_sessions = lambda: True
+    session_store.append_to_transcript = lambda *args, **kwargs: None
+    session_store.update_session = lambda *args, **kwargs: None
+    runner.session_store = session_store
+    runner._set_session_env = lambda context: None
+    runner._run_agent = AsyncMock(
+        return_value={
+            "final_response": "done",
+            "messages": [],
+            "api_calls": 1,
+            "model": "gpt-5.4",
+            "history_offset": 0,
+            "tools": [],
+            "already_sent": False,
+            "last_prompt_tokens": 0,
+        }
+    )
+    runner.hooks = types.SimpleNamespace(emit=AsyncMock())
+
+    source = SessionSource(platform=Platform.TELEGRAM, chat_id="-1001", chat_type="group", thread_id="17585")
+    event = types.SimpleNamespace(
+        text="hello",
+        message_id="m1",
+        source=source,
+        reply_to_text=None,
+        reply_to_message_id=None,
+        metadata=None,
+        media_urls=[],
+        media_types=[],
+        message_type=None,
+        auto_skill=None,
+    )
+
+    result = await runner._handle_message_with_agent(event, source, "agent:main:telegram:group:-1001:17585")
+
+    assert result.startswith("[2 · gpt-5.4]\n")
+    assert result.endswith("done")
 
 
 @pytest.mark.asyncio

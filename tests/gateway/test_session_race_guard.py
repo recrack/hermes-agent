@@ -24,9 +24,10 @@ class _FakeAdapter:
 
     def __init__(self):
         self._pending_messages = {}
+        self.sent = []
 
     async def send(self, chat_id, text, **kwargs):
-        pass
+        self.sent.append((chat_id, text, kwargs))
 
 
 def _make_runner():
@@ -281,6 +282,34 @@ async def test_stop_hard_kills_running_agent():
     # Must return a confirmation
     assert result is not None
     assert "force-stopped" in result.lower() or "unlocked" in result.lower()
+
+
+# ------------------------------------------------------------------
+# Test 6b2: A second user message interrupts the running agent and
+# sends the queued-work hint.
+# ------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_second_message_interrupts_running_agent_and_hints_queue():
+    runner = _make_runner()
+    source = SessionSource(platform=Platform.TELEGRAM, chat_id="12345", chat_type="dm")
+    session_key = build_session_key(source)
+
+    fake_agent = MagicMock()
+    runner._running_agents[session_key] = fake_agent
+
+    event = _make_event(text="keep going")
+    result = await runner._handle_message(event)
+
+    fake_agent.interrupt.assert_called_once_with("keep going")
+    assert result is None
+    assert runner._pending_messages[session_key] == "keep going"
+
+    adapter = runner.adapters[Platform.TELEGRAM]
+    assert adapter.sent
+    chat_id, text, kwargs = adapter.sent[0]
+    assert chat_id == "12345"
+    assert "/q <내용>" in text
+    assert kwargs == {}
 
 
 # ------------------------------------------------------------------

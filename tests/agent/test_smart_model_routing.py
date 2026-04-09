@@ -38,6 +38,11 @@ def test_skips_tool_heavy_prompt_keywords():
     assert choose_cheap_model_route(prompt, _BASE_CONFIG) is None
 
 
+def test_skips_korean_complex_keywords():
+    prompt = "이 버그 수정 진행 부탁해"
+    assert choose_cheap_model_route(prompt, _BASE_CONFIG) is None
+
+
 def test_resolve_turn_route_falls_back_to_primary_when_route_runtime_cannot_be_resolved(monkeypatch):
     from agent.smart_model_routing import resolve_turn_route
 
