@@ -17,7 +17,7 @@ concurrency:
 jobs:
   e2e:
     name: Playwright E2E (Linux)
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'pull_request_target' || (github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name != github.repository)) && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","ARM64","pigma-hermes-agent"]') }}
     timeout-minutes: 20
     outputs:
       review_status: ${{ steps.review-status.outputs.review_status }}

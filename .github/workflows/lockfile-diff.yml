@@ -34,7 +34,7 @@ concurrency:
 jobs:
   diff:
     name: package-lock.json semantic diff
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name == 'pull_request_target' || (github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name != github.repository)) && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","ARM64","pigma-hermes-agent"]') }}
     timeout-minutes: 5
     outputs:
       changed: ${{ steps.diff.outputs.changed }}
