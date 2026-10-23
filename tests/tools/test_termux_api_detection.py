@@ -161,6 +161,7 @@ class TestDetectAudioEnvironmentTermuxFallback:
     def test_inconclusive_probes_with_binary_does_not_emit_app_warning(
         self, monkeypatch
     ):
+        monkeypatch.setattr("hermes_constants.is_container", lambda: False)
         monkeypatch.setenv("TERMUX_VERSION", "0.118.3")
         monkeypatch.setenv("PREFIX", "/data/data/com.termux/files/usr")
         monkeypatch.delenv("SSH_CLIENT", raising=False)
