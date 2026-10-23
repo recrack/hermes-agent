@@ -60,12 +60,9 @@ jobs:
       - name: Install test tools missing from the minimal Pigma image
         if: startsWith(runner.name, 'pigma-')
         run: |
-          if ! command -v ssh >/dev/null 2>&1 || [ ! -f /usr/share/man/man1/ls.1.gz ]; then
+          if ! command -v ssh >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install --yes --no-install-recommends openssh-client man-db manpages
-          fi
-          if [ ! -f /usr/share/man/man1/ls.1.gz ]; then
-            sudo apt-get install --yes --reinstall --no-install-recommends coreutils
+            sudo apt-get install --yes --no-install-recommends openssh-client
           fi
 
       - name: Install ripgrep (prebuilt binary)

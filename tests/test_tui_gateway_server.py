@@ -910,10 +910,12 @@ def test_write_json_serializes_concurrent_writes(monkeypatch):
     for t in threads:
         t.join()
 
-    lines = "".join(out.parts).splitlines()
+    # Background gateway threads may emit unrelated JSON-RPC frames here.
+    frames = [json.loads(line) for line in "".join(out.parts).splitlines()]
+    writes = [frame for frame in frames if frame.get("text") == "x" * 24]
 
-    assert len(lines) == 8
-    assert {json.loads(line)["seq"] for line in lines} == set(range(8))
+    assert len(writes) == 8
+    assert {frame["seq"] for frame in writes} == set(range(8))
 
 
 def test_write_json_returns_false_on_broken_pipe(monkeypatch):

@@ -34,13 +34,12 @@ def test_real_read_tool_binaries_confirm_option_ownership(
 
 @pytest.mark.parametrize(
     ("tool", "args", "stdin", "needs_tty"),
+    # man passes pager strings through a shell; a bare -command is a shell option.
     [
         ("rg", ["--pre", "-payload-marker", "needle", "{input}"], None, False),
         ("rg", ["--hostname-bin=-payload-marker", "needle", "{input}"], None, False),
         ("sort", ["--buffer-size=1K", "--compress-program", "-payload-marker"], "{bulk}", False),
         ("ag", ["--pager=-payload-marker", "needle", "{input}"], None, True),
-        ("man", ["--pager", "-payload-marker", "ls"], None, True),
-        ("man", ["-P", "-payload-marker", "ls"], None, True),
     ],
 )
 def test_real_binaries_execute_leading_dash_program_payload(
