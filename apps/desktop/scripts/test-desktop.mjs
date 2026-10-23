@@ -38,8 +38,11 @@ const APP = (() => {
       unpackedDistIndex: path.join(unpacked, 'resources', 'app.asar.unpacked', 'dist', 'index.html')
     }
   }
-  // linux unpacked layout matches windows but with different binary name
-  const unpacked = path.join(RELEASE_ROOT, 'linux-unpacked')
+  // x64 uses electron-builder's default directory; arm64 includes its arch.
+  const unpacked = path.join(
+    RELEASE_ROOT,
+    ARCH === 'arm64' ? 'linux-arm64-unpacked' : 'linux-unpacked'
+  )
   return {
     appPath: unpacked,
     binary: path.join(unpacked, 'Hermes'),

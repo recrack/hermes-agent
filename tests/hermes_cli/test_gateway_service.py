@@ -506,6 +506,8 @@ class TestGatewaySystemServiceRouting:
             "_graceful_restart_via_sigusr1",
             lambda pid, timeout: calls.append(("graceful", pid, timeout)) or True,
         )
+        # Preflight has its own tests; keep restart routing independent of a live user D-Bus.
+        monkeypatch.setattr(gateway_cli, "_preflight_user_systemd", lambda: None)
 
         # Simulate systemctl reset-failed/restart followed by an active unit.
         # A plain start does not break systemd's auto-restart timer once the
